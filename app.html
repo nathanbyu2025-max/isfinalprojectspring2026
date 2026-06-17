@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WWII History Trivia Game</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f4f4f7;
+            font-family: Arial, sans-serif;
+        }
+        .game-card {
+            max-width: 650px;
+            margin: 40px auto;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        .status-bar {
+            background-color: #1a252f;
+            color: #ffffff;
+            border-radius: 6px;
+            padding: 10px 15px;
+        }
+        .option-btn {
+            text-align: left;
+            margin-bottom: 12px;
+            padding: 12px 20px;
+            font-size: 1.05rem;
+            transition: all 0.2s;
+        }
+        .option-btn:hover {
+            transform: translateX(5px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="game-card">
+        <h2 class="text-center mb-4 font-weight-bold">WWII History Trivia Challenge</h2>
+        
+        <div id="setup-screen">
+            <p class="text-center mb-4"><a href="scratch.html" class="btn btn-outline-secondary btn-sm">← Go Back to Scratch Page</a></p>
+            
+            <p class="text-muted text-center">Test your knowledge on the build-up, major events, and aftermath of World War II.</p>
+            <div class="d-grid gap-3 mt-4">
+                <button class="btn btn-primary btn-lg" onclick="startGame('normal')">Play Normal Mode (3 Lives)</button>
+                <button class="btn btn-danger btn-lg" onclick="startGame('challenge')">Play Challenge Mode (1 Life / Sudden Death)</button>
+            </div>
+        </div>
+
+        <div id="game-screen" class="d-none">
+            <div class="status-bar d-flex justify-content-between align-items-center mb-4">
+                <div>Score: <span id="score-display" class="fw-bold text-warning">0</span></div>
+                <div>Lives: <span id="lives-display" class="fw-bold text-danger">3</span></div>
+                <div>Streak: <span id="streak-display" class="fw-bold text-info">0/3</span></div>
+            </div>
+
+            <div id="reward-zone" class="alert alert-success text-center d-none mb-3">
+                <p class="fw-bold mb-2">🔥 3-in-a-row Streak! Choose your reward:</p>
+                <button id="reward-life-btn" class="btn btn-sm btn-success me-2" onclick="claimReward('life')">Gain 1 Life</button>
+                <button class="btn btn-sm btn-info" onclick="claimReward('skip')">Get 1 Skip Pass</button>
+            </div>
+
+            <div id="skip-action-zone" class="text-end mb-3 d-none">
+                <button id="use-skip-btn" class="btn btn-sm btn-secondary" onclick="useSkipPass()">Use Skip Pass (1 Available)</button>
+            </div>
+
+            <div class="card bg-light mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-muted mb-2" id="question-category">Category</h5>
+                    <p class="card-text fs-5 fw-semibold" id="question-text">Loading question...</p>
+                </div>
+            </div>
+
+            <div id="options-container" class="d-flex flex-column">
+                </div>
+        </div>
+
+        <div id="end-screen" class="d-none text-center">
+            <h3 id="end-title" class="mb-3">Game Over</h3>
+            <p class="fs-4">Final Score: <span id="final-score" class="fw-bold text-primary">0</span></p>
+            <button class="btn btn-dark mt-3" onclick="resetToMenu()">Return to Main Menu</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Expanded Game Questions Database (14 Questions)
+    const questions = [
+        {
+            category: "The Build-Up",
+            question: "Which treaty, signed at the end of WWI, created severe economic hardships in Germany and contributed to the outbreak of WWII?",
+            options: ["Treaty of Paris", "Treaty of Versailles", "Treaty of Ghent", "Berlin Pact"],
+            correct: 1
+        },
+        {
+            category: "The Build-Up",
+            question: "In 1938, which neighboring country did Germany annex during the event known historically as the Anschluss?",
+            options: ["Poland", "Czechoslovakia", "Austria", "France"],
+            correct: 2
+        },
+        {
+            category: "The Build-Up",
+            question: "Which agreement allowed Germany to annex the Sudetenland region of Czechoslovakia in the name of appeasement?",
+            options: ["The Munich Agreement", "The Yalta Conference", "The Locarno Treaties", "The Kellogg-Briand Pact"],
+            correct: 0
+        },
+        {
+            category: "The Build-Up",
+            question: "Which two nations signed a non-aggression pact in August 1939, secretly plotting to divide Poland between them?",
+            options: ["Germany and Italy", "Germany and the Soviet Union", "The UK and France", "Italy and Japan"],
+            correct: 1
+        },
+        {
+            category: "The War",
+            question: "On which date did Germany invade Poland, marking the official beginning of World War II?",
+            options: ["September 1, 1939", "December 7, 1941", "June 6, 1944", "May 8, 1945"],
+            correct: 0
+        },
+        {
+            category: "The War",
+            question: "What was the official code name for the massive Allied amphibious invasion of Normandy on June 6, 1944?",
+            options: ["Operation Barbarossa", "Operation Overlord", "Operation Torch", "Operation Market Garden"],
+            correct: 1
+        },
+        {
+            category: "The War",
+            question: "Which brutal conflict is widely considered the major turning point of the war on the Eastern Front?",
+            options: ["The Battle of Britain", "The Battle of the Bulge", "The Battle of Stalingrad", "The Battle of Midway"],
+            correct: 2
+        },
+        {
+            category: "The War",
+            question: "Which surprise military strike prompted the United States to officially enter World War II?",
+            options: ["The Sinking of the Lusitania", "The Attack on Pearl Harbor", "The Invasion of Guadalcanal", "The Blitz of London"],
+            correct: 1
+        },
+        {
+            category: "The War",
+            question: "What naval battle in June 1942 served as the major turning point of the war in the Pacific Theater?",
+            options: ["Battle of the Coral Sea", "Battle of Midway", "Battle of Leyte Gulf", "Battle of Iwo Jima"],
+            correct: 1
+        },
+        {
+            category: "The War",
+            question: "What military term describes the fast-moving, armored warfare tactics used by Germany early in the war?",
+            options: ["Attrition", "Island Hopping", "Blitzkrieg", "Trench Warfare"],
+            correct: 2
+        },
+        {
+            category: "The War",
+            question: "Who served as the Prime Minister of Great Britain during the vast majority of World War II?",
+            options: ["Neville Chamberlain", "Winston Churchill", "Clement Attlee", "Franklin D. Roosevelt"],
+            correct: 1
+        },
+        {
+            category: "Aftermath",
+            question: "Which international organization was established in 1945 immediately following the war to preserve global peace?",
+            options: ["The League of Nations", "The United Nations", "NATO", "The Warsaw Pact"],
+            correct: 1
+        },
+        {
+            category: "Aftermath",
+            question: "What geopolitical term describes the decades-long ideological tension between the US and the USSR that started right after WWII?",
+            options: ["The Cold War", "The Great Depression", "The Iron Age", "The Reconstruction"],
+            correct: 0
+        },
+        {
+            category: "Aftermath",
+            question: "What was the name of the massive US initiative passed in 1948 to provide economic aid and rebuild Western European economies?",
+            options: ["The Truman Doctrine", "The New Deal", "The Marshall Plan", "The Dawes Plan"],
+            correct: 2
+        }
+    ];
+
+    // State Variables
+    let gameMode = 'normal';
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let lives = 3;
+    let maxLives = 3;
+    let streak = 0;
+    let hasSkipPass = false;
+    let shuffledQuestions = [];
+
+    // Start Game Function
+    function startGame(mode) {
+        gameMode = mode;
+        score = 0;
+        streak = 0;
+        currentQuestionIndex = 0;
+        hasSkipPass = false;
+
+        if (gameMode === 'challenge') {
+            lives = 1;
+            maxLives = 1;
+        } else {
+            lives = 3;
+            maxLives = 3;
+        }
+
+        // Fisher-Yates shuffle implementation ensures no repetitions and random order
+        shuffledQuestions = [...questions].sort(() => Math.random() - 0.5);
+
+        document.getElementById('setup-screen').classList.add('d-none');
+        document.getElementById('end-screen').classList.add('d-none');
+        document.getElementById('game-screen').classList.remove('d-none');
+        
+        updateStatusBar();
+        showQuestion();
+    }
+
+    function showQuestion() {
+        document.getElementById('reward-zone').classList.add('d-none');
+        
+        // Fix string error from previous snippet layout
+        if (hasSkipPass) {
+            document.getElementById('skip-action-zone').classList.remove('d-none');
+        } else {
+            document.getElementById('skip-action-zone').classList.add('d-none');
+        }
+
+        // Check if all items in the array have been exhausted without repeating
+        if (currentQuestionIndex >= shuffledQuestions.length) {
+            endGame(true);
+            return;
+        }
+
+        let q = shuffledQuestions[currentQuestionIndex];
+        document.getElementById('question-category').innerText = q.category;
+        document.getElementById('question-text').innerText = q.question;
+
+        let optionsContainer = document.getElementById('options-container');
+        optionsContainer.innerHTML = '';
+
+        q.options.forEach((option, index) => {
+            let button = document.createElement('button');
+            button.className = 'btn btn-outline-dark option-btn';
+            button.innerText = option;
+            button.onclick = () => checkAnswer(index);
+            optionsContainer.appendChild(button);
+        });
+    }
+
+    function checkAnswer(selectedIndex) {
+        let q = shuffledQuestions[currentQuestionIndex];
+
+        if (selectedIndex === q.correct) {
+            score += 10;
+            streak++;
+            
+            if (streak === 3) {
+                handleStreakMilestone();
+                return; // Pause execution to handle modal payout choice
+            }
+        } else {
+            lives--;
+            streak = 0;
+            if (lives <= 0) {
+                endGame(false);
+                return;
+            }
+            alert(`Incorrect! The correct answer was: ${q.options[q.correct]}`);
+        }
+
+        currentQuestionIndex++;
+        updateStatusBar();
+        showQuestion();
+    }
+
+    function updateStatusBar() {
+        document.getElementById('score-display').innerText = score;
+        document.getElementById('lives-display').innerText = lives;
+        document.getElementById('streak-display').innerText = `${streak}/3`;
+    }
+
+    function handleStreakMilestone() {
+        updateStatusBar();
+        document.getElementById('reward-zone').classList.remove('d-none');
+        
+        let lifeBtn = document.getElementById('reward-life-btn');
+        if (lives >= maxLives) {
+            lifeBtn.disabled = true;
+            lifeBtn.innerText = "Life Full (Max reached)";
+        } else {
+            lifeBtn.disabled = false;
+            lifeBtn.innerText = "Gain 1 Life";
+        }
+    }
+
+    function claimReward(type) {
+        if (type === 'life' && lives < maxLives) {
+            lives++;
+        } else if (type === 'skip') {
+            hasSkipPass = true;
+        }
+        
+        streak = 0;
+        currentQuestionIndex++;
+        updateStatusBar();
+        showQuestion();
+    }
+
+    function useSkipPass() {
+        if (!hasSkipPass) return;
+        hasSkipPass = false;
+        alert("Question Skipped safely!");
+        currentQuestionIndex++;
+        updateStatusBar();
+        showQuestion();
+    }
+
+    function endGame(victory) {
+        document.getElementById('game-screen').classList.add('d-none');
+        document.getElementById('end-screen').classList.remove('d-none');
+        
+        document.getElementById('end-title').innerText = victory ? "🏆 Congratulations! You Finished All Questions!" : "💥 Game Over (Out of Lives)";
+        document.getElementById('final-score').innerText = score;
+    }
+
+    function resetToMenu() {
+        document.getElementById('end-screen').classList.add('d-none');
+        document.getElementById('setup-screen').classList.remove('d-none');
+    }
+</script>
+
+</body>
+</html>
